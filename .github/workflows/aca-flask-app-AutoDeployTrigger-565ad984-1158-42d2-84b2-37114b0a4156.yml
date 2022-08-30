@@ -63,8 +63,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-        with:
-          ref: master
       - name: Action Full Scan
         uses: zaproxy/action-full-scan@v0.3.0
         with:
