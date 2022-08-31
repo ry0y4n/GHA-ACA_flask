@@ -1,4 +1,11 @@
-## Azure Container Appsの手動デプロイ
+スターター用ブランチ（[start-point](https://github.com/ry0y4n/GHA-ACA_flask/tree/start-point)）を使って以下のフローを体験することができます
+## Azure CLIを用いたAzure Container Appsの手動デプロイ
+
+### ログイン
+
+```bash
+az login
+```
 ### 環境変数設定
 
 ```bash
