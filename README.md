@@ -1,6 +1,19 @@
 スターター用ブランチ（[start-point](https://github.com/ry0y4n/GHA-ACA_flask/tree/start-point)）を使って以下のフローを体験することができます
 ## Azure CLIを用いたAzure Container Appsの手動デプロイ
 
+## 環境構築
+このレポジトリをフォークするか，クローンして以下の手順で自分のレポジトリを作ってください．
+
+```bash
+git clone https://github.com/ry0y4n/GHA-ACA_flask.git -b start-point
+rm -rf .git
+git init
+git add .
+git commit -m "first commit"
+git branch -M main
+git remote add origin <自分のレポジトリURL>
+git push -u origin main
+```
 ### ログイン
 
 ```bash
@@ -12,6 +25,8 @@ az login
 RESOURCE_GROUP="リソースグループ名"
 LOCATION="リソースロケーション"
 CONTAINERAPPS_ENVIRONMENT="Container Apps環境名"
+CONTAINER_APP_NAME="コンテナーアプリ名"
+CONTAINER_REGISTRY="コンテナレジストリ名"
 ```
 
 ### リソースグループ作成
@@ -25,13 +40,13 @@ az group create \
 ### ACRインスタンス作成
 
 ```bash
-az acr create --resource-group $RESOURCE_GROUP --name <コンテナリポジトリ名> --sku Basic
+az acr create --resource-group $RESOURCE_GROUP --name $CONTAINER_REGISTRY --sku Basic --admin-enabled true
 ```
 
 ### ACRログイン
 
 ```bash
-az acr login --name <コンテナリポジトリ名>
+az acr login --name $CONTAINER_REGISTRY
 ```
 
 ### Dockerイメージ確認
@@ -43,18 +58,15 @@ docker images
 ### ビルド&タグつける
 
 ```bash
-docker build -t flask-hello-world
-docker tag flask-hello-world <コンテナリポジトリ名>.azurecr.io/flask-hello-world:v1
+docker build -t flask-hello-world .
+docker tag flask-hello-world $CONTAINER_REGISTRY.azurecr.io/flask-hello-world:v1
 ```
 
 ### DockerイメージをACRにpush
 
 ```bash
-docker push <コンテナリポジトリ名>.azurecr.io/flask-hello-world:v1
+docker push $CONTAINER_REGISTRY.azurecr.io/flask-hello-world:v1
 ```
-
-### ACRアクセスキー有効化
-Azure Portal上でACRのアクセスキーを有効化する
 
 ### 環境作成
 
@@ -69,17 +81,35 @@ az containerapp env create \
 
 ```bash
 az containerapp create \
-  --image <コンテナリポジトリ名>.azurecr.io/flask-hello-world:v1 \
-  --name aca-flask-app \
+  --image $CONTAINER_REGISTRY.azurecr.io/flask-hello-world:v1 \
+  --name $CONTAINER_APP_NAME \
   --resource-group $RESOURCE_GROUP \
   --environment $CONTAINERAPPS_ENVIRONMENT \
 	--ingress external \
 	--target-port 80
 ```
-## CD
-Azure Portal上でデプロイ確認&Azure Portal上で継続的デプロイを設定
+## CDの実装
+サービスプリンシパルを発行（出力されるJSONデータの中身は次のコマンドで使います）
+```bash
+az ad sp create-for-rbac --name momoServicePrincipal \  
+                         --role contributor \
+                         --scopes /subscriptions/<サブスクリプションID>/resourceGroups/$RESOURCE_GROUP
+```
 
-## CI
+GitHub Actions ワークフローをリポジトリに追加して，コンテナー アプリをデプロイ
+```bash
+az containerapp github-action add -g $RESOURCE_GROUP \
+                                  -n $CONTAINER_APP_NAME \
+                                  --repo-url <リポジトリURL> \
+                                  --branch main \
+                                  --registry-url $CONTAINER_REGISTRY.azurecr.io \ 
+                                  --service-principal-client-id <前のコマンドで出力された値（appID）> \
+                                  --service-principal-tenant-id <前のコマンドで出力された値（tenant）> \
+                                  --service-principal-client-secret <前のコマンドで出力された値（password）> \
+                                  --login-with-github
+```
+
+## CIの実装
 ### 単体テスト(PyTest)の導入
 [Python のビルドとテスト](https://docs.github.com/ja/actions/automating-builds-and-tests/building-and-testing-python)を参考に単体テストを自動化
 
