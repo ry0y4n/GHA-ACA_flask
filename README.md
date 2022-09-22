@@ -1,7 +1,9 @@
+# Azure Container AppsのCI/CD体験レポジトリ
+
 スターター用ブランチ（[start-point](https://github.com/ry0y4n/GHA-ACA_flask/tree/start-point)）を使って以下のフローを体験することができます
 ## Azure CLIを用いたAzure Container Appsの手動デプロイ
 
-## 環境構築
+### 環境構築
 このレポジトリをフォークするか，クローンして以下の手順で自分のレポジトリを作ってください．
 
 ```bash
@@ -88,7 +90,7 @@ az containerapp create \
 	--ingress external \
 	--target-port 80
 ```
-## CDの実装
+## デプロイ自動化の実装
 サービスプリンシパルを発行（出力されるJSONデータの中身は次のコマンドで使います）
 ```bash
 az ad sp create-for-rbac --name momoServicePrincipal \  
@@ -109,7 +111,7 @@ az containerapp github-action add -g $RESOURCE_GROUP \
                                   --login-with-github
 ```
 
-## CIの実装
+## テスト自動化の実装
 ### 単体テスト(PyTest)の導入
 [Python のビルドとテスト](https://docs.github.com/ja/actions/automating-builds-and-tests/building-and-testing-python)を参考に単体テストを自動化
 
@@ -126,3 +128,9 @@ az containerapp github-action add -g $RESOURCE_GROUP \
 [GitHub Actions で OWASP ZAP が動くだと!?](https://qiita.com/r-hirakawa/items/b6ae6a749a6f7a7c5db7)を参考に脆弱性チェックを自動化
 
 CDで作成したビルド&デプロイのワークフローファイルに追記する形で，デプロイ後のURLに対して脆弱性チェックをかける
+
+## 体験
+
+1. 適当な作業ブランチ(e.g. `develop`or`feature/hoge`)でコミットした後，`main`ブランチに対してPRを立てる
+2. テストが動作することを確認してマージ
+3. デプロイワークフローと脆弱性チェックが動作することを確認する
